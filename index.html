@@ -226,21 +226,21 @@
         </div>
     </div>
 
-    <script>
+   <script>
         const speechBubble = document.getElementById('speechBubble');
         const textInput = document.getElementById('textInput');
         const micBtn = document.getElementById('micBtn');
         const apiKeyInput = document.getElementById('apiKeyInput');
 
-        let apiKey = localStorage.getItem('groq_api_key') || '';
+        let apiKey = localStorage.getItem('openrouter_api_key') || '';
         if (apiKey) apiKeyInput.value = '••••••••••••••••';
 
         window.saveApiKey = function() {
             const val = apiKeyInput.value.trim();
             if (val && !val.startsWith('•')) {
                 apiKey = val;
-                localStorage.setItem('groq_api_key', apiKey);
-                speechBubble.innerText = "Chiave Groq salvata con successo!";
+                localStorage.setItem('openrouter_api_key', apiKey);
+                speechBubble.innerText = "Chiave API salvata con successo!";
                 speak("Chiave configurata. Pronto.");
             }
         }
@@ -256,8 +256,8 @@
             }
         }
 
-        // Chiamata all'API ultra-veloce di Groq
-      async function callAI(prompt) {
+        // Chiamata all'API universale di OpenRouter
+        async function callAI(prompt) {
             if (!apiKey) {
                 return "Inserisci prima la tua chiave API in alto!";
             }
@@ -270,11 +270,11 @@
                     headers: { 
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${apiKey}`,
-                        'HTTP-Referer': window.location.origin, // Richiesto da OpenRouter
-                        'X-Title': 'Holo Agent'                // Nome dell'app
+                        'HTTP-Referer': window.location.origin,
+                        'X-Title': 'HoloAgent'
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-flash-1.5", // Oppure un modello gratuito come "meta-llama/llama-3-8b-instruct:free"
+                        model: "google/gemini-flash-1.5",
                         messages: [
                             {
                                 role: "system",
@@ -319,7 +319,8 @@
                 return;
             }
 
-            const aiResponse = await callGroq(message);
+            // CORRETTO: Richiama la funzione callAI definita sopra
+            const aiResponse = await callAI(message);
             speechBubble.innerText = aiResponse;
             speak(aiResponse);
         }
