@@ -405,6 +405,10 @@
         // 5. PROCESSORE PRINCIPALE DEI MESSAGGI
         // ==========================================
 
+  // ==========================================
+        // 5. PROCESSORE PRINCIPALE DEI MESSAGGI
+        // ==========================================
+
         async function processMessage(message) {
             const lower = message.toLowerCase();
             
@@ -434,21 +438,27 @@
             }
 
             // --- GESTIONE GOOGLE CALENDAR (CREA, ELIMINA, LEGGI) ---
-            if (lower.includes('calendario') || lower.includes('impegni') || lower.includes('evento') || lower.includes('appuntamento')) {
+            // Elenco esteso di parole chiave per non far sfuggire le richieste di modifica/eliminazione
+            const isCalendarQuery = [
+                'calendario', 'impegni', 'impegno', 'evento', 'appuntamento', 'riunione',
+                'cancella', 'elimina', 'rimuovi', 'aggiungi', 'crea', 'fissa', 'programma'
+            ].some(keyword => lower.includes(keyword));
+
+            if (isCalendarQuery) {
                 speechBubble.innerText = "Elaboro la richiesta per il calendario...";
 
-                // Usa l'IA per capire l'intenzione dell'utente (Crea, Elimina o Leggi)
                 const now = new Date();
-                const systemPrompt = `Oggi è ${now.toISOString()}. Analizza il messaggio dell'utente per Google Calendar e rispondi ESATTAMENTE con un oggetto JSON valido privo di formattazione markdown.
-Formato richiesto:
-- Se vuole CREARE: {"action": "create", "summary": "Titolo", "startISO": "YYYY-MM-DDTHH:mm:ssZ", "endISO": "YYYY-MM-DDTHH:mm:ssZ"} (durata standard 1 ora se non specificata)
-- Se vuole ELIMINARE: {"action": "delete", "keyword": "parola chiave del titolo dell'evento"}
-- Se vuole LEGGERE/VEDERE: {"action": "read"}`;
+                const systemPrompt = `Oggi è ${now.toISOString()}. L'utente vuole interagire con Google Calendar.
+Analizza il messaggio dell'utente e rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza markdown o altro testo).
+
+Formati accettati:
+- Per CREARE: {"action": "create", "summary": "Titolo dell'evento", "startISO": "YYYY-MM-DDTHH:mm:ssZ", "endISO": "YYYY-MM-DDTHH:mm:ssZ"}
+- Per ELIMINARE/CANCELLARE: {"action": "delete", "keyword": "titolo o parola chiave dell'evento da eliminare"}
+- Per LEGGERE/MOSTRARE: {"action": "read"}`;
 
                 const jsonString = await callAI(message, systemPrompt);
 
                 try {
-                    // Pulisci il testo da eventuali blocchi codice ```json
                     const cleanJson = jsonString.replace(/```json|```/g, '').trim();
                     const intent = JSON.parse(cleanJson);
 
@@ -463,7 +473,6 @@ Formato richiesto:
                         speak(result);
                         return;
                     } else {
-                        // Di default legge
                         const eventi = await fetchCalendarEvents();
                         if (!googleAccessToken) {
                             speechBubble.innerText = eventi;
@@ -476,7 +485,14 @@ Formato richiesto:
                         return;
                     }
                 } catch (e) {
-                    // Se il parsing JSON fallisce, esegui una semplice lettura
+                    // Fallback se l'IA non restituisce JSON
+                    if (lower.includes('cancella') || lower.includes('elimina') || lower.includes('rimuovi')) {
+                        const wordToRemove = message.replace(/(cancella|elimina|rimuovi|dal calendario|l'evento|la riunione)/gi, '').trim();
+                        const result = await deleteCalendarEvent(wordToRemove);
+                        speechBubble.innerText = result;
+                        speak(result);
+                        return;
+                    }
                     const eventi = await fetchCalendarEvents();
                     speechBubble.innerText = eventi;
                     speak(eventi);
