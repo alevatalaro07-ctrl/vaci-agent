@@ -232,8 +232,11 @@
         const micBtn = document.getElementById('micBtn');
         const apiKeyInput = document.getElementById('apiKeyInput');
 
+        // Carica la chiave salvata
         let apiKey = localStorage.getItem('openrouter_api_key') || '';
-        if (apiKey) apiKeyInput.value = '••••••••••••••••';
+        if (apiKey) {
+            apiKeyInput.value = '••••••••••••••••';
+        }
 
         window.saveApiKey = function() {
             const val = apiKeyInput.value.trim();
@@ -242,6 +245,8 @@
                 localStorage.setItem('openrouter_api_key', apiKey);
                 speechBubble.innerText = "Chiave API salvata con successo!";
                 speak("Chiave configurata. Pronto.");
+            } else {
+                alert("Inserisci una chiave API valida prima di salvare!");
             }
         }
 
@@ -256,10 +261,15 @@
             }
         }
 
-        // Chiamata all'API universale di OpenRouter
+        // Chiamata all'API universale di OpenRouter con controllo chiave
         async function callAI(prompt) {
-            if (!apiKey) {
-                return "Inserisci prima la tua chiave API in alto!";
+            // Rilegge la chiave al volo dal localStorage per sicurezza
+            const currentKey = apiKey || localStorage.getItem('openrouter_api_key');
+            
+            if (!currentKey) {
+                speechBubble.innerText = "Inserisci e salva prima la tua chiave API in alto!";
+                speak("Inserisci la chiave API.");
+                return "Errore: Chiave API mancante.";
             }
 
             speechBubble.innerText = "Elaborazione in corso...";
@@ -269,12 +279,12 @@
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
+                        'Authorization': `Bearer ${currentKey}`, // Inserisce correttamente la chiave
                         'HTTP-Referer': window.location.origin,
                         'X-Title': 'HoloAgent'
                     },
                     body: JSON.stringify({
-                        model: "openrouter/free",
+                        model: "openrouter/free", // Router automatico gratuito
                         messages: [
                             {
                                 role: "system",
@@ -319,7 +329,6 @@
                 return;
             }
 
-            // CORRETTO: Richiama la funzione callAI definita sopra
             const aiResponse = await callAI(message);
             speechBubble.innerText = aiResponse;
             speak(aiResponse);
