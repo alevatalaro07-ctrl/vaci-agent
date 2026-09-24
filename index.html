@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holo Agent Pro - Groq Edition</title>
+    <title>Vaci Agent</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body {
@@ -193,6 +194,8 @@
         }
     </style>
 </head>
+    <!-- Pulsante nascosto per l'autenticazione di Google (richiesto da Google GIS) -->
+<button id="authBtn" onclick="authenticateGoogle()" style="display: none;"></button>
 <body>
 
     <div class="container">
@@ -204,7 +207,7 @@
 
         <!-- Area Olografica -->
         <div class="holo-stage">
-            <div class="speech-bubble" id="speechBubble">Hello! Inserisci la tua chiave Groq per iniziare.</div>
+            <div class="speech-bubble" id="speechBubble">Hello! Inserisci la tua chiave per iniziare.</div>
             
             <div class="avatar-container">
                 <div class="light-beam"></div>
@@ -249,7 +252,96 @@
                 alert("Inserisci una chiave API valida!");
             }
         }
+const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleusercontent.com'; 
+        let googleAccessToken = null;
+        let tokenClient;
 
+        // Inizializza il client di Google in background
+        window.onload = function() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: 'https://www.googleapis.com/auth/calendar.events', // Permessi di lettura e scrittura
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.error("Errore Google Auth:", tokenResponse.error);
+                            return;
+                        }
+                        googleAccessToken = tokenResponse.access_token;
+                        speak("Calendario collegato con successo. Adesso posso gestirlo.");
+                    },
+                });
+            }
+        };
+
+        window.authenticateGoogle = function() {
+            if (tokenClient) {
+                tokenClient.requestAccessToken({prompt: ''}); // Tenta di connettersi
+            }
+        };
+
+        // Funzione per leggere il calendario
+        async function fetchCalendarEvents() {
+            if (!googleAccessToken) {
+                // Se manca il token, attiva automaticamente il login di Google in background
+                authenticateGoogle();
+                return "Attendere prego: sto autorizzando l'accesso al calendario. Per favore, ripeti la richiesta tra un istante dopo aver completato il popup.";
+            }
+            
+            const timeMin = new Date().toISOString();
+            try {
+                const response = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&maxResults=5&singleEvents=true&orderBy=startTime`;
+                const res = await fetch(response, {
+                    headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                });
+                const data = await res.json();
+                
+                if (data.items && data.items.length > 0) {
+                    return data.items.map(event => {
+                        let date = new Date(event.start.dateTime || event.start.date);
+                        return `- ${event.summary} il ${date.toLocaleDateString()} alle ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    }).join(", ");
+                } else {
+                    return "Nessun evento in programma nel prossimo periodo.";
+                }
+            } catch (err) {
+                return "Errore nella lettura del calendario.";
+            }
+        }
+
+        // Funzione per CREARE o MODIFICARE un evento nel calendario
+        async function createCalendarEvent(summary, dateTimeString) {
+            if (!googleAccessToken) {
+                authenticateGoogle();
+                return "Devi prima autorizzare l'accesso al calendario. Ho aperto la richiesta, riprova tra un attimo.";
+            }
+
+            try {
+                // Esempio di creazione evento rapido
+                const event = {
+                    'summary': summary,
+                    'start': { 'dateTime': dateTimeString },
+                    'end': { 'dateTime': new Date(new Date(dateTimeString).getTime + 60*60*1000).toISOString() } // Durata 1 ora di default
+                };
+
+                const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${googleAccessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(event)
+                });
+                
+                if (response.ok) {
+                    return `Ho aggiunto con successo l'evento: "${summary}" sul tuo calendario.`;
+                } else {
+                    return "Non sono riuscito a salvare l'evento sul calendario.";
+                }
+            } catch (err) {
+                return "Errore di connessione durante la scrittura sul calendario.";
+            }
+        }
         // Sintesi Vocale (Text-to-Speech)
         window.speak = function(text) {
             if ('speechSynthesis' in window) {
@@ -326,6 +418,7 @@
                 speak(text);
                 return;
             }
+            
 
             const aiResponse = await callAI(message);
             speechBubble.innerText = aiResponse;
