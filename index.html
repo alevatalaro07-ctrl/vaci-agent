@@ -67,18 +67,24 @@
             max-width: 600px;
         }
         .avatar {
-            width: 120px;
-            height: 120px;
+            width: 130px;
+            height: 130px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0,240,255,0.4) 0%, rgba(10,14,23,0) 70%);
             border: 2px solid #00f0ff;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 50px;
             margin-bottom: 25px;
             animation: pulse 3s infinite alternate;
+            overflow: hidden;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         @keyframes pulse {
             0% { transform: scale(0.98); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
@@ -139,7 +145,10 @@
 
     <!-- Avatar Olografico e Fumetto di Risposta -->
     <div class="hologram-container">
-        <div class="avatar">🤖</div>
+        <div class="avatar">
+            <!-- SOSTITUISCI IL LINK DENTRO src="..." CON L'URL DELLA TUA IMMAGINE -->
+            <img id="avatarImg" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFuCFlIBwV5B5g7iRVjVa9xf_21_v8Nr_ubSh6RP82oA&s=10">
+        </div>
         <div class="speech-bubble" id="speechBubble">
             Ciao! Sono il tuo Holo Agent. Come posso aiutarti oggi?
         </div>
@@ -188,29 +197,17 @@
                 apiKey = val;
                 localStorage.setItem('openrouter_api_key', apiKey);
                 speechBubble.innerText = "Chiave OpenRouter salvata correttamente!";
-                speak("Chiave configurata. Sono pronto.");
             } else {
                 alert("Inserisci una chiave API valida!");
             }
         };
 
-        // Sintesi Vocale (Text-To-Speech)
-        window.speak = function(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'it-IT';
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
-            }
-        };
-
-        // Invia Notifica Browser
+        // Invia Notifica Browser Nativa
         function sendNotification(title, body) {
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(title, { 
                     body: body,
-                    icon: "https://img.icons8.com/fluency/96/robot.png"
+                    icon: document.getElementById('avatarImg').src || "https://img.icons8.com/fluency/96/robot.png"
                 });
             }
         }
@@ -231,7 +228,6 @@
                         }
                         googleAccessToken = tokenResponse.access_token;
                         speechBubble.innerText = "Calendario collegato con successo!";
-                        speak("Calendario collegato con successo.");
                     },
                 });
             }
@@ -428,13 +424,11 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
                     if (isNaN(diffMs) || diffMs <= 0) {
                         const errMsg = "La data o l'ora specificata non è valida o è già passata.";
                         speechBubble.innerText = errMsg;
-                        speak(errMsg);
                         return;
                     }
 
                     setTimeout(() => {
                         sendNotification("Promemoria Holo Agent", data.task);
-                        speak(`Promemoria: ${data.task}`);
                     }, diffMs);
 
                     const dateFormatted = targetDate.toLocaleString('it-IT', { 
@@ -447,12 +441,10 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
 
                     const conferm = `Perfetto! Ti manderò una notifica per "${data.task}" fissata per ${dateFormatted}.`;
                     speechBubble.innerText = conferm;
-                    speak(conferm);
                     return;
                 } catch (err) {
                     const errFallback = "Non sono riuscito a capire la data o l'ora del promemoria. Riprova indicando l'ora, ad esempio: 'domani alle 19'.";
                     speechBubble.innerText = errFallback;
-                    speak(errFallback);
                     return;
                 }
             }
@@ -477,7 +469,6 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
 
 - Per AGGIUNGERE/CREARE/METTERE/FISSARE/SEGNARE:
   {"action": "create", "summary": "Titolo pulito dell'evento", "startISO": "YYYY-MM-DDTHH:mm:ssZ", "endISO": "YYYY-MM-DDTHH:mm:ssZ"}
-  (Nota: Se l'orario non è specificato, imposta le 09:00:00 del giorno indicato. endISO deve essere 1 ora dopo startISO se non specificato).
 
 - Per TOGLIERE/ELIMINARE/CANCELLARE/RIMUOVERE:
   {"action": "delete", "keyword": "titolo o parola chiave dell'evento da eliminare"}
@@ -494,23 +485,19 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
                     if (intent.action === 'create') {
                         const result = await createCalendarEvent(intent.summary, intent.startISO, intent.endISO);
                         speechBubble.innerText = result;
-                        speak(result);
                         return;
                     } else if (intent.action === 'delete') {
                         const result = await deleteCalendarEvent(intent.keyword);
                         speechBubble.innerText = result;
-                        speak(result);
                         return;
                     } else {
                         const eventi = await fetchCalendarEvents();
                         if (!googleAccessToken) {
                             speechBubble.innerText = eventi;
-                            speak(eventi);
                             return;
                         }
                         const aiSummary = await callAI(`L'utente chiede del calendario. Ecco gli eventi: ${eventi}. Riassumili in modo chiaro e breve.`);
                         speechBubble.innerText = aiSummary;
-                        speak(aiSummary);
                         return;
                     }
                 } catch (e) {
@@ -518,12 +505,10 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
                         const wordToRemove = message.replace(/(cancella|elimina|rimuovi|togli|dal calendario|l'evento|la riunione|l'appuntamento)/gi, '').trim();
                         const result = await deleteCalendarEvent(wordToRemove);
                         speechBubble.innerText = result;
-                        speak(result);
                         return;
                     }
                     const eventi = await fetchCalendarEvents();
                     speechBubble.innerText = eventi;
-                    speak(eventi);
                     return;
                 }
             }
@@ -532,7 +517,6 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
             speechBubble.innerText = "Pensando...";
             const aiResponse = await callAI(message);
             speechBubble.innerText = aiResponse;
-            speak(aiResponse);
         }
 
         // ==========================================
@@ -550,7 +534,7 @@ Rispondi ESATTAMENTE ed ESCLUSIVAMENTE con un oggetto JSON valido (senza blocchi
             if (e.key === 'Enter') await window.sendText();
         };
 
-        // Riconoscimento Vocale
+        // Riconoscimento Vocale (Input)
         let recognition = null;
         let isListening = false;
 
