@@ -1,274 +1,238 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <script src="https://accounts.google.com/gsi/client" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaci Agent</title>
+    <title>Holo Agent</title>
+    <!-- Libreria ufficiale Google Identity Services per il Calendario -->
+    <script src="https://accounts.google.com/gsi/client" defer></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
-            background: radial-gradient(circle at center, #0a192f 0%, #020c1b 100%);
-            color: #64ffda;
-            height: 100vh;F
+            background: #0a0e17;
+            color: #e0f7fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             align-items: center;
-            overflow: hidden;
+            justify-content: space-between;
             padding: 20px;
         }
-        .container {
+        header {
             width: 100%;
-            max-width: 450px;
-            height: 100%;
+            max-width: 600px;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
+            gap: 10px;
+            background: rgba(16, 26, 43, 0.8);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
-        .config-box {
-            width: 100%;
-            background: rgba(10, 25, 47, 0.95);
-            border: 1px solid #64ffda;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            gap: 8px;
-        }
-        .config-box input {
+        header input {
             flex: 1;
-            background: #020c1b;
-            border: 1px solid rgba(100, 255, 218, 0.4);
-            border-radius: 6px;
-            padding: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.3);
             color: #fff;
-            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 6px;
             outline: none;
         }
-        .config-box button {
-            background: #64ffda;
-            color: #0a192f;
+        header button, .controls button {
+            background: #00f0ff;
+            color: #0a0e17;
             border: none;
+            padding: 8px 16px;
             border-radius: 6px;
-            padding: 0 12px;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .holo-stage {
-            flex: 1;
+        header button:hover, .controls button:hover {
+            background: #70f6ff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+        .hologram-container {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            margin: 40px 0;
             width: 100%;
-            position: relative;
+            max-width: 600px;
         }
-        .speech-bubble {
-            background: rgba(10, 25, 47, 0.85);
-            border: 1px solid #64ffda;
-            color: #e2e8f0;
-            padding: 12px 20px;
-            border-radius: 20px;
-            font-size: 16px;
-            margin-bottom: 25px;
-            box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
-            position: relative;
-            max-width: 90%;
-            text-align: center;
-            animation: floatBubble 3s ease-in-out infinite;
-        }
-        .avatar-container {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(100,255,218,0.2), rgba(0,122,255,0.2));
-            border: 2px solid #64ffda;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 30px rgba(100, 255, 218, 0.4), inset 0 0 20px rgba(100, 255, 218, 0.2);
-            position: relative;
-            animation: floatAvatar 3s ease-in-out infinite;
-        }
-        .avatar-face {
-            font-size: 50px;
-            color: #64ffda;
-        }
-        .pod {
-            width: 220px;
-            height: 50px;
-            background: linear-gradient(to bottom, #112240, #0a192f);
-            border: 2px solid #64ffda;
-            border-radius: 50%;
-            margin-top: 30px;
-            box-shadow: 0 0 25px rgba(100, 255, 218, 0.5), inset 0 0 10px rgba(100, 255, 218, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-        .pod span {
-            font-size: 24px;
-            font-weight: bold;
-            color: #64ffda;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px #64ffda;
-        }
-        .light-beam {
-            position: absolute;
-            top: -30px;
+        .avatar {
             width: 120px;
-            height: 40px;
-            background: linear-gradient(to top, rgba(100, 255, 218, 0.2), transparent);
-            clip-path: polygon(20% 100%, 80% 100%, 100% 0%, 0% 0%);
-        }
-        .controls-panel {
-            width: 100%;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(100, 255, 218, 0.3);
-            border-radius: 15px;
-            padding: 15px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,240,255,0.4) 0%, rgba(10,14,23,0) 70%);
+            border: 2px solid #00f0ff;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
-        input[type="text"] {
-            flex: 1;
-            background: #020c1b;
-            border: 1px solid #64ffda;
-            border-radius: 8px;
-            padding: 12px;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-        }
-        button.action-btn {
-            background: #64ffda;
-            color: #0a192f;
-            border: none;
-            border-radius: 8px;
-            padding: 0 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button.action-btn:hover { background: #52e0bc; }
-        .mic-btn {
-            background: #ff5c5c;
-            color: white;
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 8px;
-        }
-        .mic-btn.listening {
-            background: #ff3b3b;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes floatAvatar {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        @keyframes floatBubble {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+            justify-content: center;
+            font-size: 50px;
+            margin-bottom: 25px;
+            animation: pulse 3s infinite alternate;
         }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 92, 92, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 92, 92, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 92, 92, 0); }
+            0% { transform: scale(0.98); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+            100% { transform: scale(1.02); box-shadow: 0 0 30px rgba(0, 240, 255, 0.7); }
+        }
+        .speech-bubble {
+            background: rgba(16, 26, 43, 0.85);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            min-height: 100px;
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .controls {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+            background: rgba(16, 26, 43, 0.8);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .controls input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            outline: none;
+        }
+        #micBtn.listening {
+            background: #ff0055;
+            color: #fff;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.6; }
         }
     </style>
 </head>
-    <!-- Pulsante nascosto per l'autenticazione di Google (richiesto da Google GIS) -->
-<button id="authBtn" onclick="authenticateGoogle()" style="display: none;"></button>
 <body>
 
-    <div class="container">
-        <!-- Input per configurare la chiave API di Groq -->
-        <div class="config-box">
-            <input type="password" id="apiKeyInput" placeholder="Incolla qui la tua API kKey (es. gsk_...)">
-            <button onclick="saveApiKey()">Salva</button>
-        </div>
+    <!-- Area Configurazione API Key -->
+    <header>
+        <input type="password" id="apiKeyInput" placeholder="Inserisci chiave OpenRouter (sk-or-v1-...)">
+        <button onclick="saveApiKey()">Salva Chiave</button>
+    </header>
 
-        <!-- Area Olografica -->
-        <div class="holo-stage">
-            <div class="speech-bubble" id="speechBubble">Hello! Inserisci la tua chiave per iniziare.</div>
-            
-            <div class="avatar-container">
-                <div class="light-beam"></div>
-                <div class="avatar-face">🤖</div>
-            </div>
-            
-            <div class="pod">
-                <span>B</span>
-            </div>
-        </div>
-
-        <!-- Pannello Controlli -->
-        <div class="controls-panel">
-            <button id="micBtn" class="mic-btn" onclick="toggleListening()">🎙️ Parla a voce</button>
-            <div class="input-row">
-                <input type="text" id="textInput" placeholder="Chiedi qualcosa all'agente..." onkeypress="handleKeyPress(event)">
-                <button class="action-btn" onclick="sendText()">Invia</button>
-            </div>
+    <!-- Avatar Olografico e Fumetto di Risposta -->
+    <div class="hologram-container">
+        <div class="avatar">🤖</div>
+        <div class="speech-bubble" id="speechBubble">
+            Ciao! Sono il tuo Holo Agent. Come posso aiutarti oggi?
         </div>
     </div>
 
- <script>
+    <!-- Pulsante Google Auth Nascosto (gestito automaticamente dallo script) -->
+    <button id="authBtn" onclick="authenticateGoogle()" style="display: none;"></button>
+
+    <!-- Barra dei Comandi Vocali e Testuali -->
+    <div class="controls">
+        <input type="text" id="textInput" placeholder="Scrivi un comando o chiedi qualcosa..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendText()">Invia</button>
+        <button id="micBtn" onclick="toggleListening()">🎙️ Parla</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURAZIONE E VARIABILI GLOBALI
+        // ==========================================
+        
+        // INSERISCI QUI IL TUO GOOGLE CLIENT ID
+        const GOOGLE_CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleusercontent.com'; 
+
         const speechBubble = document.getElementById('speechBubble');
         const textInput = document.getElementById('textInput');
         const micBtn = document.getElementById('micBtn');
         const apiKeyInput = document.getElementById('apiKeyInput');
 
-        // Carica la chiave di OpenRouter salvata
         let apiKey = localStorage.getItem('openrouter_api_key') || '';
         if (apiKey) {
             apiKeyInput.value = '••••••••••••••••';
         }
 
+        let googleAccessToken = null;
+        let tokenClient = null;
+
+        // Richiedi subito il permesso per le notifiche del browser
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // Salva la chiave API di OpenRouter nel LocalStorage
         window.saveApiKey = function() {
             const val = apiKeyInput.value.trim();
             if (val && !val.startsWith('•')) {
                 apiKey = val;
                 localStorage.setItem('openrouter_api_key', apiKey);
-                speechBubble.innerText = "Chiave OpenRouter salvata!";
-                speak("Chiave configurata. Pronto.");
+                speechBubble.innerText = "Chiave OpenRouter salvata correttamente!";
+                speak("Chiave configurata. Sono pronto.");
             } else {
                 alert("Inserisci una chiave API valida!");
             }
-        }
-const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleusercontent.com'; 
-        let googleAccessToken = null;
-        let tokenClient;
+        };
 
-        // Inizializza il client di Google in background
+        // Sintesi Vocale (Text-To-Speech)
+        window.speak = function(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'it-IT';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        // Invia Notifiche Browser Nativa
+        function sendNotification(title, body) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, { 
+                    body: body,
+                    icon: "https://img.icons8.com/fluency/96/robot.png"
+                });
+            }
+        }
+
+        // ==========================================
+        // 2. INTEGRAZIONE GOOGLE CALENDAR (GIS)
+        // ==========================================
+
         window.onload = function() {
+            // Inizializza il client Google Identity Services quando carica la libreria
             if (typeof google !== 'undefined' && google.accounts) {
                 tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
-                    scope: 'https://www.googleapis.com/auth/calendar.events', // Permessi di lettura e scrittura
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: 'https://www.googleapis.com/auth/calendar.events',
                     callback: (tokenResponse) => {
                         if (tokenResponse.error) {
                             console.error("Errore Google Auth:", tokenResponse.error);
                             return;
                         }
                         googleAccessToken = tokenResponse.access_token;
-                        speak("Calendario collegato con successo. Adesso posso gestirlo.");
+                        speechBubble.innerText = "Calendario collegato con successo! Puoi chiedermi i tuoi impegni.";
+                        speak("Calendario collegato con successo.");
                     },
                 });
             }
@@ -276,22 +240,17 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
 
         window.authenticateGoogle = function() {
             if (tokenClient) {
-                tokenClient.requestAccessToken({prompt: ''}); // Tenta di connettersi
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                alert("Il client di Google non è ancora pronto o il Client ID non è configurato.");
             }
         };
 
-        // Funzione per leggere il calendario
-        // Funzione per leggere il calendario con apertura automatica del popup se manca il token
-       // Funzione per leggere il calendario con apertura automatica del popup se manca il token
         async function fetchCalendarEvents() {
             if (!googleAccessToken) {
-                // Se non abbiamo il token, forziamo l'apertura del popup di Google usando il client inizializzato
-                if (tokenClient) {
-                    tokenClient.requestAccessToken({prompt: 'consent'});
-                } else {
-                    console.error("TokenClient di Google non ancora inizializzato.");
-                }
-                return "Non ho i permessi per accedere al calendario. Ti ho appena aperto la finestra di Google per effettuare l'accesso: autorizza l'app e poi ripeti la richiesta.";
+                // Se manca il token, attiva il popup di Google
+                authenticateGoogle();
+                return "Per leggere il calendario ho bisogno del tuo permesso. Ho aperto la finestra di Google: autorizza l'accesso e poi chiedimelo di nuovo!";
             }
             
             const timeMin = new Date().toISOString();
@@ -310,21 +269,14 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
                     return "Nessun evento in programma nel prossimo periodo.";
                 }
             } catch (err) {
-                return "Errore nella lettura del calendario.";
-            }
-        }
-        // Sintesi Vocale (Text-to-Speech)
-        window.speak = function(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'it-IT';
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
+                return "Errore nella lettura del calendario Google.";
             }
         }
 
-        // Chiamata all'API di OpenRouter
+        // ==========================================
+        // 3. INTEGRAZIONE IA (OPENROUTER)
+        // ==========================================
+
         async function callAI(prompt) {
             const currentKey = apiKey || localStorage.getItem('openrouter_api_key');
             
@@ -345,11 +297,11 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
                         'X-Title': 'HoloAgent'
                     },
                     body: JSON.stringify({
-                        model: "openrouter/free", // Router automatico gratuito di OpenRouter
+                        model: "openrouter/free",
                         messages: [
                             {
                                 role: "system",
-                                content: "Sei un assistente olografico avanzato. Rispondi in modo conciso, diretto e in massimo 2 frasi."
+                                content: "Sei Holo Agent, un assistente olografico intelligente e cordiale. Rispondi in modo conciso, diretto e naturale in massimo 2 o 3 frasi."
                             },
                             {
                                 role: "user",
@@ -365,49 +317,77 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
                 } else if (data.error) {
                     return "Errore OpenRouter: " + data.error.message;
                 } else {
-                    return "Errore nella risposta.";
+                    return "Non sono riuscito a elaborare una risposta.";
                 }
             } catch (err) {
-                return "Errore di connessione.";
+                return "Errore di connessione con il servizio IA.";
             }
         }
+
+        // ==========================================
+        // 4. PROCESSORE PRINCIPALE DEI MESSAGGI
+        // ==========================================
 
         async function processMessage(message) {
             const lower = message.toLowerCase();
             
-            if (lower.startsWith('chiama') || lower.startsWith('effettua chiamata')) {
-                const contact = message.replace(/chiama|effettua chiamata/gi, '').trim();
-                const text = `Avvio della chiamata verso ${contact || 'contatto'} in corso...`;
-                speechBubble.innerText = text;
-                speak(text);
-                return;
-            }
-            
-            if (lower.startsWith('manda messaggio') || lower.startsWith('invia messaggio')) {
-                const text = "Interfaccia messaggi attivata. Dettagli trasmessi.";
-                speechBubble.innerText = text;
-                speak(text);
-                return;
-            }
-            
+            // Gestione Richiesta Calendario
+            if (lower.includes('calendario') || lower.includes('impegni') || lower.includes('cosa ho oggi') || lower.includes('programma')) {
+                speechBubble.innerText = "Controllo il tuo calendario...";
+                const eventi = await fetchCalendarEvents();
+                
+                // Se manca l'autorizzazione, restituisce il messaggio informativo
+                if (!googleAccessToken) {
+                    speechBubble.innerText = eventi;
+                    speak(eventi);
+                    return;
+                }
 
+                const promptForAI = `L'utente ti chiede dei suoi impegni. Ecco i dati estratti dal calendario: ${eventi}. Riassumili in modo naturale, chiaro e breve.`;
+                const aiResponse = await callAI(promptForAI);
+                speechBubble.innerText = aiResponse;
+                speak(aiResponse);
+                return;
+            }
+
+            // Gestione Promemoria e Notifiche
+            if (lower.includes('ricordami di')) {
+                const task = message.substring(message.toLowerCase().indexOf("ricordami di") + 13).trim();
+                
+                // Imposta un timer di prova a 10 secondi
+                setTimeout(() => {
+                    sendNotification("Promemoria Holo Agent", task);
+                    speak(`Promemoria: ${task}`);
+                }, 10000);
+
+                const conferm = `Ho impostato il promemoria per: "${task}". Ti avviserò tra 10 secondi.`;
+                speechBubble.innerText = conferm;
+                speak(conferm);
+                return;
+            }
+
+            // Risposta IA Standard
             const aiResponse = await callAI(message);
             speechBubble.innerText = aiResponse;
             speak(aiResponse);
         }
 
+        // ==========================================
+        // 5. EVENTI INTERFACCIA E RICONOSCIMENTO VOCALE
+        // ==========================================
+
         window.sendText = async function() {
-            const val = textInput.value;
+            const val = textInput.value.trim();
             if (!val) return;
             textInput.value = '';
             await processMessage(val);
-        }
+        };
 
         window.handleKeyPress = async function(e) {
             if (e.key === 'Enter') await window.sendText();
-        }
+        };
 
-        // Riconoscimento Vocale Nativo
+        // Riconoscimento Vocale Nativo del Browser
         let recognition = null;
         let isListening = false;
 
@@ -421,7 +401,7 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
             recognition.onstart = () => {
                 isListening = true;
                 micBtn.classList.add('listening');
-                micBtn.innerText = '🔴 In ascolto...';
+                micBtn.innerText = '🔴 Ascolto...';
                 speechBubble.innerText = 'Ti sto ascoltando...';
             };
 
@@ -432,7 +412,7 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
 
             recognition.onerror = () => {
                 stopListening();
-                speechBubble.innerText = "Errore audio. Riprova.";
+                speechBubble.innerText = "Non sono riuscito a sentire. Riprova.";
             };
 
             recognition.onend = () => {
@@ -444,7 +424,7 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
 
         window.toggleListening = function() {
             if (!recognition) {
-                alert("Il tuo browser non supporta il riconoscimento vocale.");
+                alert("Riconoscimento vocale non supportato da questo browser.");
                 return;
             }
             if (isListening) {
@@ -452,12 +432,12 @@ const CLIENT_ID = '365223537670-qq78cpra1rljkf3gd1iq3dpk654c68il.apps.googleuser
             } else {
                 recognition.start();
             }
-        }
+        };
 
         function stopListening() {
             isListening = false;
             micBtn.classList.remove('listening');
-            micBtn.innerText = '🎙️ Parla a voce';
+            micBtn.innerText = '🎙️ Parla';
         }
     </script>
 </body>
