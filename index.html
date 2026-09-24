@@ -354,6 +354,10 @@
         // 3. INTEGRAZIONE IA (OPENROUTER)
         // ==========================================
 
+       // ==========================================
+        // 3. INTEGRAZIONE IA CON FALLBACK AUTOMATICO
+        // ==========================================
+
         async function callAI(prompt, systemInstruction = "Sei Holo Agent, un assistente olografico intelligente. Rispondi in modo conciso e naturale in massimo 2 o 3 frasi.") {
             const currentKey = apiKey || localStorage.getItem('openrouter_api_key');
             
@@ -362,33 +366,49 @@
                 return "Errore: Chiave API mancante.";
             }
 
-            try {
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentKey}`,
-                        'HTTP-Referer': window.location.origin,
-                        'X-Title': 'HoloAgent'
-                    },
-                    body: JSON.stringify({
-                        model: "openrouter/free",
-                        messages: [
-                            { role: "system", content: systemInstruction },
-                            { role: "user", content: prompt }
-                        ]
-                    })
-                });
+            // Elenco di modelli gratuiti: tenta openrouter/free, se va in 429 passa ai successivi
+            const freeModels = [
+                "openrouter/free",
+                "google/gemini-2.0-flash-lite-001",
+                "meta-llama/llama-3.3-70b-instruct:free",
+                "qwen/qwen-2.5-72b-instruct:free"
+            ];
 
-                const data = await response.json();
-                if (data.choices && data.choices[0].message.content) {
-                    return data.choices[0].message.content;
-                } else {
-                    return "Errore nella risposta dell'IA.";
+            for (const model of freeModels) {
+                try {
+                    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentKey}`,
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'HoloAgent'
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: [
+                                { role: "system", content: systemInstruction },
+                                { role: "user", content: prompt }
+                            ]
+                        })
+                    });
+
+                    // Se il modello restituisce 429 (Rate limit), tenta il prossimo della lista
+                    if (response.status === 429) {
+                        console.warn(`Modello ${model} in rate limit (429). Passo al modello successivo...`);
+                        continue; 
+                    }
+
+                    const data = await response.json();
+                    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                        return data.choices[0].message.content;
+                    }
+                } catch (err) {
+                    console.error(`Errore con il modello ${model}:`, err);
                 }
-            } catch (err) {
-                return "Errore di connessione con il servizio IA.";
             }
+
+            return "Tutti i modelli gratuiti sono momentaneamente occupati o in rate limit. Attendi 10 secondi e riprova.";
         }
 
         // ==========================================
