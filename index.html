@@ -226,13 +226,13 @@
         </div>
     </div>
 
-   <script>
+ <script>
         const speechBubble = document.getElementById('speechBubble');
         const textInput = document.getElementById('textInput');
         const micBtn = document.getElementById('micBtn');
         const apiKeyInput = document.getElementById('apiKeyInput');
 
-        // Carica la chiave salvata
+        // Carica la chiave di OpenRouter salvata
         let apiKey = localStorage.getItem('openrouter_api_key') || '';
         if (apiKey) {
             apiKeyInput.value = '••••••••••••••••';
@@ -243,10 +243,10 @@
             if (val && !val.startsWith('•')) {
                 apiKey = val;
                 localStorage.setItem('openrouter_api_key', apiKey);
-                speechBubble.innerText = "Chiave API salvata con successo!";
+                speechBubble.innerText = "Chiave OpenRouter salvata!";
                 speak("Chiave configurata. Pronto.");
             } else {
-                alert("Inserisci una chiave API valida prima di salvare!");
+                alert("Inserisci una chiave API valida!");
             }
         }
 
@@ -261,14 +261,12 @@
             }
         }
 
-        // Chiamata all'API universale di OpenRouter con controllo chiave
+        // Chiamata all'API di OpenRouter
         async function callAI(prompt) {
-            // Rilegge la chiave al volo dal localStorage per sicurezza
             const currentKey = apiKey || localStorage.getItem('openrouter_api_key');
             
             if (!currentKey) {
-                speechBubble.innerText = "Inserisci e salva prima la tua chiave API in alto!";
-                speak("Inserisci la chiave API.");
+                speechBubble.innerText = "Inserisci prima la tua chiave OpenRouter in alto!";
                 return "Errore: Chiave API mancante.";
             }
 
@@ -279,12 +277,12 @@
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentKey}`, // Inserisce correttamente la chiave
+                        'Authorization': `Bearer ${currentKey}`,
                         'HTTP-Referer': window.location.origin,
                         'X-Title': 'HoloAgent'
                     },
                     body: JSON.stringify({
-                        model: "openrouter/free", // Router automatico gratuito
+                        model: "openrouter/free", // Router automatico gratuito di OpenRouter
                         messages: [
                             {
                                 role: "system",
@@ -302,7 +300,7 @@
                 if (data.choices && data.choices[0].message.content) {
                     return data.choices[0].message.content;
                 } else if (data.error) {
-                    return "Errore API: " + data.error.message;
+                    return "Errore OpenRouter: " + data.error.message;
                 } else {
                     return "Errore nella risposta.";
                 }
