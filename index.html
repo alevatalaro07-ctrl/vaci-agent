@@ -3,15 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holo Agent Pro</title>
-    <!-- SDK Ufficiale di Google Gemini per eliminare i problemi CORS -->
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/genai": "https://esm.run/@google/genai"
-        }
-      }
-    </script>
+    <title>Holo Agent Pro - Groq Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body {
@@ -204,15 +196,15 @@
 <body>
 
     <div class="container">
-        <!-- Input per configurare la chiave API Gemini -->
+        <!-- Input per configurare la chiave API di Groq -->
         <div class="config-box">
-            <input type="password" id="apiKeyInput" placeholder="Incolla qui la tua Gemini API Key">
+            <input type="password" id="apiKeyInput" placeholder="Incolla qui la tua Groq API Key (es. gsk_...)">
             <button onclick="saveApiKey()">Salva</button>
         </div>
 
         <!-- Area Olografica -->
         <div class="holo-stage">
-            <div class="speech-bubble" id="speechBubble">Hello! Inserisci la tua chiave API o scrivi un comando.</div>
+            <div class="speech-bubble" id="speechBubble">Hello! Inserisci la tua chiave Groq per iniziare.</div>
             
             <div class="avatar-container">
                 <div class="light-beam"></div>
@@ -228,30 +220,28 @@
         <div class="controls-panel">
             <button id="micBtn" class="mic-btn" onclick="toggleListening()">🎙️ Parla a voce</button>
             <div class="input-row">
-                <input type="text" id="textInput" placeholder="Chiedi qualcosa o simula chiamata/messaggio..." onkeypress="handleKeyPress(event)">
+                <input type="text" id="textInput" placeholder="Chiedi qualcosa all'agente..." onkeypress="handleKeyPress(event)">
                 <button class="action-btn" onclick="sendText()">Invia</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { GoogleGenAI } from "@google/genai";
-
+    <script>
         const speechBubble = document.getElementById('speechBubble');
         const textInput = document.getElementById('textInput');
         const micBtn = document.getElementById('micBtn');
         const apiKeyInput = document.getElementById('apiKeyInput');
 
-        let apiKey = localStorage.getItem('gemini_api_key') || '';
+        let apiKey = localStorage.getItem('groq_api_key') || '';
         if (apiKey) apiKeyInput.value = '••••••••••••••••';
 
         window.saveApiKey = function() {
             const val = apiKeyInput.value.trim();
             if (val && !val.startsWith('•')) {
                 apiKey = val;
-                localStorage.setItem('gemini_api_key', apiKey);
-                speechBubble.innerText = "API Key salvata con successo!";
-                speak("Chiave API salvata. Sono pronto.");
+                localStorage.setItem('groq_api_key', apiKey);
+                speechBubble.innerText = "Chiave Groq salvata con successo!";
+                speak("Chiave configurata. Pronto.");
             }
         }
 
@@ -266,28 +256,46 @@
             }
         }
 
-        // Chiamata tramite l'SDK ufficiale Google Gen AI
-        async function callGemini(prompt) {
+        // Chiamata all'API ultra-veloce di Groq
+        async function callGroq(prompt) {
             if (!apiKey) {
-                return "Inserisci prima la tua chiave API di Gemini in alto!";
+                return "Inserisci prima la tua chiave API di Groq in alto!";
             }
 
-            speechBubble.innerText = "Elaborazione in corso...";
+            speechBubble.innerText = "Elaborazione rapida...";
             
             try {
-                const ai = new GoogleGenAI({ apiKey: apiKey });
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3.6-flash',
-                    contents: "Rispondi in modo conciso, diretto e in stile assistente olografico avanzato (max 2 frasi) alla richiesta: " + prompt,
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "Sei un assistente olografico avanzato. Rispondi in modo conciso, diretto e in massimo 2 frasi."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ]
+                    })
                 });
 
-                if (response && response.text) {
-                    return response.text;
+                const data = await response.json();
+                if (data.choices && data.choices[0].message.content) {
+                    return data.choices[0].message.content;
+                } else if (data.error) {
+                    return "Errore Groq: " + data.error.message;
                 } else {
-                    return "Errore nella risposta dell'API.";
+                    return "Errore nella risposta.";
                 }
             } catch (err) {
-                return "Errore API: " + (err.message || "Connessione fallita");
+                return "Errore di connessione con Groq.";
             }
         }
 
@@ -309,7 +317,7 @@
                 return;
             }
 
-            const aiResponse = await callGemini(message);
+            const aiResponse = await callGroq(message);
             speechBubble.innerText = aiResponse;
             speak(aiResponse);
         }
@@ -378,7 +386,5 @@
             micBtn.innerText = '🎙️ Parla a voce';
         }
     </script>
-</body>
-</html>
 </body>
 </html>
